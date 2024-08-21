@@ -98,8 +98,7 @@ class VyDevice:
 
         Args:
             op (str): The operation to perform in the API request.
-            path (list, optional): The path elements for the API request. This can be a single list for a single
-                                configuration path or a list of lists for multiple configuration paths.
+            path (list, optional): The path elements for the API request (default is an empty list).
             file (str, optional): The file to include in the request (default is None).
             url (str, optional): The URL to include in the request (default is None).
             name (str, optional): The name to include in the request (default is None).
@@ -107,38 +106,60 @@ class VyDevice:
         Returns:
             dict: The payload for the API request.
         """
-        # Adjusting the data structure based on whether path is single or multiple
-        if isinstance(path[0], list):  # Handling multiple paths
-            data = [{'op': op, 'path': p} for p in path]
-        else:  # Handling a single path
-            data = {'op': op, 'path': path}
+        if not path:
+            data = {
+                'op': op,
+                'path': path
+            }
 
-        # Including the optional parameters if provided
-        if file:
-            if isinstance(data, list):  # If data is a list of dicts (multiple paths)
-                for d in data:
-                    d['file'] = file
-            else:  # If data is a single dict (single path)
+            if file is not None:
                 data['file'] = file
                 
-        if url:
-            if isinstance(data, list):
-                for d in data:
-                    d['url'] = url
-            else:
+            if url is not None:
                 data['url'] = url
             
-        if name:
-            if isinstance(data, list):
-                for d in data:
-                    d['name'] = name
-            else:
+            if name is not None:
                 data['name'] = name
                 
+            payload = {
+                'data': json.dumps(data),
+                'key': self.apikey
+            }
+
+            return payload
+        elif isinstance(path, list) and len(path) == 1:
+            # If path is a list and contains only one element, use it directly
+            data = {'op': op, 'path': path[0]}
+        else:
+            data = []
+            current_command = {'op': op, 'path': []}
+            for p in path:
+                if isinstance(p, list):
+                    # If the current item is a list, merge it into the current command
+                    if current_command['path']:
+                        data.append(current_command)
+                    current_command = {'op': op, 'path': p}
+                else:
+                    # Otherwise, add the item to the current command's path
+                    current_command['path'].append(p)
+
+            # Add the last command to data
+            if current_command['path']:
+                data.append(current_command)
+
         payload = {
             'data': json.dumps(data),
             'key': self.apikey
         }
+
+        if file is not None:
+            data['file'] = file
+
+        if url is not None:
+            payload['url'] = url
+
+        if name is not None:
+            data['name'] = name
 
         return payload
 
