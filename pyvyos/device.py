@@ -1,7 +1,6 @@
-import urllib3
+from typing import Optional, Union, List
 import requests
 import json
-import pprint
 from dataclasses import dataclass
 
 @dataclass
@@ -46,6 +45,7 @@ class VyDevice:
         _api_request(command, op, path=[], method='POST', file=None, url=None, name=None): Make an API request.
         retrieve_show_config(path=[]): Retrieve and show the device configuration.
         retrieve_return_values(path=[]): Retrieve and return specific configuration values.
+        retrieve_exists(path=[]): Check for the existence of a specific configuration element.
         reset(path=[]): Reset a specific configuration element.
         image_add(url=None, file=None, path=[]): Add an image from a URL or file.
         image_delete(name, url=None, file=None, path=[]): Delete a specific image.
@@ -133,6 +133,7 @@ class VyDevice:
         else:
             data = []
             current_command = {'op': op, 'path': []}
+
             for p in path:
                 if isinstance(p, list):
                     # If the current item is a list, merge it into the current command
@@ -163,8 +164,7 @@ class VyDevice:
 
         return payload
 
-
-    def _api_request(self, command, op, path=[], method='POST', file=None, url=None, name=None):
+    def _api_request(self, command, op, path=[], file=None, url=None, name=None) -> ApiResponse:
         """
         Make an API request.
 
@@ -213,9 +213,10 @@ class VyDevice:
   
         # Removing apikey from payload for security reasons
         del(payload['key'])
-        return ApiResponse(status=status, request=payload, result=result, error=error)
 
-    def retrieve_show_config(self, path=[]):
+        return ApiResponse(status=status, request=payload, result=result, error=error)
+ 
+    def retrieve_show_config(self, path: Optional[List[str]]=[]) -> ApiResponse:
         """
         Retrieve and show the device configuration.
 
@@ -225,9 +226,9 @@ class VyDevice:
         Returns:
             ApiResponse: An ApiResponse object representing the API response.
         """
-        return self._api_request(command="retrieve", op='showConfig', path=path, method="POST")
+        return self._api_request(command="retrieve", op='showConfig', path=path)
 
-    def retrieve_return_values(self, path=[]):
+    def retrieve_return_values(self, path: Optional[List[str]]=[]) -> ApiResponse:
         """
         Retrieve and return specific configuration values.
 
@@ -237,9 +238,21 @@ class VyDevice:
         Returns:
             ApiResponse: An ApiResponse object representing the API response.
         """
-        return self._api_request(command="retrieve", op='returnValues', path=path, method="POST")
+        return self._api_request(command="retrieve", op='returnValues', path=path)
 
-    def reset(self, path=[]):
+    def retrieve_exists(self, path: Optional[List[str]]=[]) -> ApiResponse:
+        """
+        Check for the existence of a specific configuration element.
+
+        Args:
+            path (list, optional): The path elements for the configuration retrieval (default is an empty list).
+
+        Returns:
+            ApiResponse: An ApiResponse object representing the API response.
+        """
+        return self._api_request(command="retrieve", op='exists', path=path)
+
+    def reset(self, path: Optional[List[str]]=[]) -> ApiResponse:
         """
         Reset a specific configuration element.
 
@@ -249,9 +262,9 @@ class VyDevice:
         Returns:
             ApiResponse: An ApiResponse object representing the API response.
         """
-        return self._api_request(command="reset", op='reset', path=path, method="POST")
+        return self._api_request(command="reset", op='reset', path=path)
 
-    def image_add(self, url=None, file=None, path=[]):
+    def image_add(self, url=None) -> ApiResponse:
         """
         Add an image from a URL or file.
 
@@ -263,9 +276,9 @@ class VyDevice:
         Returns:
             ApiResponse: An ApiResponse object representing the API response.
         """
-        return self._api_request(command="image", op='add', url=url, method="POST")
+        return self._api_request(command="image", op='add', url=url)
 
-    def image_delete(self, name, url=None, file=None, path=[]):
+    def image_delete(self, name) -> ApiResponse:
         """
         Delete a specific image.
 
@@ -278,9 +291,9 @@ class VyDevice:
         Returns:
             ApiResponse: An ApiResponse object representing the API response.
         """
-        return self._api_request(command="image", op='delete', name=name, method="POST")
+        return self._api_request(command="image", op='delete', name=name)
 
-    def show(self, path=[]):
+    def show(self, path: Optional[List[str]]=[]) -> ApiResponse:
         """
         Show configuration information.
 
@@ -290,9 +303,9 @@ class VyDevice:
         Returns:
             ApiResponse: An ApiResponse object representing the API response.
         """
-        return self._api_request(command="show", op='show', path=path, method="POST")
+        return self._api_request(command="show", op='show', path=path)
 
-    def generate(self, path=[]):
+    def generate(self, path: Optional[List[str]]=[]) -> ApiResponse:
         """
         Generate configuration based on the given path.
 
@@ -302,9 +315,9 @@ class VyDevice:
         Returns:
             ApiResponse: An ApiResponse object representing the API response.
         """
-        return self._api_request(command="generate", op='generate', path=path, method="POST")
+        return self._api_request(command="generate", op='generate', path=path)
 
-    def configure_set(self, path=[]):
+    def configure_set(self, path: Optional[Union[List[str], List[List[str]]]]=[]) -> ApiResponse:
         """
         Set configuration based on the given path.
 
@@ -314,10 +327,9 @@ class VyDevice:
         Returns:
             ApiResponse: An ApiResponse object representing the API response.
         """
-        return self._api_request(command="configure", op='set', path=path, method="POST")
+        return self._api_request(command="configure", op='set', path=path)
 
-
-    def configure_delete(self, path=[]):
+    def configure_delete(self, path: Optional[Union[List[str], List[List[str]]]]=[]) -> ApiResponse:
         """
         Delete configuration based on the given path.
 
@@ -327,9 +339,9 @@ class VyDevice:
         Returns:
             ApiResponse: An ApiResponse object representing the API response.
         """
-        return self._api_request(command="configure", op='delete', path=path, method="POST")
+        return self._api_request(command="configure", op='delete', path=path)
 
-    def config_file_save(self, file=None):
+    def config_file_save(self, file=None) -> ApiResponse:
         """
         Save the configuration to a file.
 
@@ -339,9 +351,9 @@ class VyDevice:
         Returns:
             ApiResponse: An ApiResponse object representing the API response.
         """
-        return self._api_request(command="config-file", op='save', file=file, method="POST")
+        return self._api_request(command="config-file", op='save', file=file)
 
-    def config_file_load(self, file=None):
+    def config_file_load(self, file=None) -> ApiResponse:
         """
         Load the configuration from a file.
 
@@ -351,9 +363,9 @@ class VyDevice:
         Returns:
             ApiResponse: An ApiResponse object representing the API response.
         """
-        return self._api_request(command="config-file", op='load', file=file, method="POST")
+        return self._api_request(command="config-file", op='load', file=file)
 
-    def reboot(self, path=["now"]):
+    def reboot(self, path: Optional[List[str]]=["now"]) -> ApiResponse:
         """
         Reboot the device.
 
@@ -363,9 +375,9 @@ class VyDevice:
         Returns:
             ApiResponse: An ApiResponse object representing the API response.
         """
-        return self._api_request(command="reboot", op='reboot', path=path, method="POST")
+        return self._api_request(command="reboot", op='reboot', path=path)
     
-    def poweroff(self, path=["now"]):
+    def poweroff(self, path: Optional[List[str]]=["now"]) -> ApiResponse:
         """
         Power off the device.
 
@@ -375,4 +387,4 @@ class VyDevice:
         Returns:
             ApiResponse: An ApiResponse object representing the API response.
         """
-        return self._api_request(command="poweroff", op='poweroff', path=path, method="POST")
+        return self._api_request(command="poweroff", op='poweroff', path=path)
